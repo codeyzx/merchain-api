@@ -157,7 +157,7 @@ app.post("/status", function (req, res) {
       //   // TODO: set transaction status on your databaase to 'refund'
       // }
 
-      res.send(summary);
+      res.status(200).json({ summary });
     })
     .catch(() => {
       res.status(404).json({
