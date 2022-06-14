@@ -19,6 +19,8 @@ const token_uri = process.env.token_uri;
 const auth_provider_x509_cert_url = process.env.auth_provider_x509_cert_url;
 const client_x509_cert_url = process.env.client_x509_cert_url;
 
+const PORT = process.env.PORT || 3000;
+
 const firebase = {
   type,
   project_id,
@@ -165,6 +167,6 @@ app.post("/status", function (req, res) {
     });
 });
 
-app.listen(3000, () => {
-  console.log("Server started on " + 3000);
+app.listen(PORT, () => {
+  console.log("Server started on " + PORT);
 });
