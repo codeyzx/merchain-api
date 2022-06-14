@@ -3,10 +3,34 @@ import dotenv from "dotenv";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import midtransClient from "midtrans-client";
+import cors from "cors";
+import morgan from "morgan";
+import swaggerUI from "swagger-ui-express";
+import swaggerJsDoc from "swagger-jsdoc";
 
 dotenv.config();
 
 let app = express();
+
+const options = {
+  definition: {
+    openapi: "3.0.0",
+    info: {
+      title: "Merchain API",
+      version: "1.0.0",
+      description: "A simple Express Library API",
+    },
+    servers: [
+      {
+        url: "http://localhost:3000",
+        // url: "https://merchain-api-production.up.railway.app/",
+      },
+    ],
+  },
+  apis: ["./app.js"],
+};
+
+const specs = swaggerJsDoc(options);
 
 const type = process.env.type;
 const project_id = process.env.project_id;
@@ -42,6 +66,8 @@ const snap = new midtransClient.Snap({
 
 app.use(express.urlencoded({ extended: true })); // to support URL-encoded POST body
 app.use(express.json()); // to support parsing JSON POST body
+app.use(cors());
+app.use(morgan("dev"));
 app.use(function (req, res, next) {
   // Website you wish to allow to connect
   res.setHeader("Access-Control-Allow-Origin", "http://localhost:3000");
@@ -66,28 +92,85 @@ app.use(function (req, res, next) {
   next();
 });
 
-app.get("/", function (req, res) {
-  res.status(200).send({ jon: process.env.project_id, asd: "ok" });
+// app.get("/", function (req, res) {
+//   res.status(200).send({ jon: process.env.project_id, asd: "ok" });
+// });
+
+app.use("/api-docs", swaggerUI.serve, swaggerUI.setup(specs));
+
+app.get("/", (rqe, res) => {
+  res.redirect("/api-docs");
 });
 
-app.get("/verification/:uid", function (req, res) {
-  if (!admin.apps.length) {
-    admin.initializeApp({
-      databaseURL: process.env.databaseURL,
-      projectId: process.env.projectId,
-      credential: admin.credential.cert(firebase),
-    });
-  }
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Transaction:
+ *       type: object
+ *       required:
+ *         - customers
+ *         - items
+ *       properties:
+ *         customers:
+ *           type: object
+ *           properties:
+ *             email:
+ *               type: string
+ *             first_name:
+ *               type: string
+ *             last_name:
+ *               type: string
+ *             phone:
+ *               type: string
+ *         items:
+ *           type: array
+ *           properties:
+ *           items:
+ *             type: object
+ *             properties:
+ *               id:
+ *                 type: string
+ *               price:
+ *                 type: integer
+ *               quantity:
+ *                 type: integer
+ *               name:
+ *                 type: string
+ */
 
-  getAuth()
-    .getUser(req.params.uid)
-    .then((userRecord) => {
-      res.status(200).json({ emailVerified: userRecord.emailVerified });
-    })
-    .catch((error) => {
-      res.status(400).json({ error: error });
-    });
-});
+/**
+ * @swagger
+ * tags:
+ *   name: Transaction
+ *   description: Managing transaction API
+ */
+
+/**
+ * @swagger
+ * tags:
+ *   name: User
+ *   description: Managing user API
+ */
+
+/**
+ * @swagger
+ * /charge:
+ *   post:
+ *     summary: Create a new transaction_id
+ *     tags: [Transaction]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/Transaction'
+ *     responses:
+ *       200:
+ *         description: The transaction_id was successfully created
+ *       500:
+ *         description: Some server error
+ */
 
 app.post("/charge", function (req, res) {
   let body = req.body;
@@ -115,10 +198,30 @@ app.post("/charge", function (req, res) {
   });
 });
 
-app.post("/status", function (req, res) {
-  let receivedJson = req.body;
+/**
+ * @swagger
+ * /det/{transaction_id}:
+ *   get:
+ *     summary: Get a transaction detail by transaction_id
+ *     tags: [Transaction]
+ *     parameters:
+ *       - in: path
+ *         name: transaction_id
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: an transaction detail
+ *       404:
+ *         description: transaction_id was not found
+ */
+app.get("/det/:transaction_id", function (req, res) {
+  let transaction_id = {
+    transaction_id: req.params.transaction_id,
+  };
   snap.transaction
-    .notification(receivedJson)
+    .notification(transaction_id)
     .then((transactionStatusObject) => {
       // let orderId = transactionStatusObject.order_id;
       // let transactionStatus = transactionStatusObject.transaction_status;
@@ -157,13 +260,55 @@ app.post("/status", function (req, res) {
       //   // TODO: set transaction status on your databaase to 'refund'
       // }
 
-      res.status(200).json({ summary });
+      res.status(200).send(summary);
     })
     .catch(() => {
       res.status(404).json({
         status_code: "404",
         status_message: "Transaction id not found",
       });
+    });
+});
+
+/**
+ * @swagger
+ * /status/{uid}:
+ *   get:
+ *     summary: Get a email status by uid
+ *     tags: [User]
+ *     parameters:
+ *       - in: path
+ *         name: uid
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: an email status user
+ *       404:
+ *         description: uid was not found
+ */
+
+app.get("/status/:uid", function (req, res) {
+  if (!admin.apps.length) {
+    admin.initializeApp({
+      databaseURL: process.env.databaseURL,
+      projectId: process.env.projectId,
+      credential: admin.credential.cert(firebase),
+    });
+  }
+
+  getAuth()
+    .getUser(req.params.uid)
+    .then((userRecord) => {
+      res
+        .status(200)
+        .json({ status_code: "200", emailVerified: userRecord.emailVerified });
+    })
+    .catch((error) => {
+      res
+        .status(404)
+        .json({ status_code: "404", error_message: error.message });
     });
 });
 
