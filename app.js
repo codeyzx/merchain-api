@@ -136,6 +136,11 @@ app.get("/", (rqe, res) => {
  *                 type: integer
  *               name:
  *                 type: string
+ *         callbacks:
+ *           type: object
+ *           properties:
+ *             url:
+ *               type: string
  */
 
 /**
@@ -177,6 +182,7 @@ app.post("/charge", function (req, res) {
   let gross_amount = 0;
   let items = body.items;
   let customers = body.customers;
+  let url = body.url;
 
   items.forEach(function (item) {
     gross_amount += item.price * item.quantity;
@@ -189,6 +195,9 @@ app.post("/charge", function (req, res) {
     },
     customer_details: customers,
     item_details: items,
+    callbacks: {
+      finish: url,
+    },
   };
 
   // create snap transaction token
