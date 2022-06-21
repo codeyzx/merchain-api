@@ -141,6 +141,11 @@ app.get("/", (rqe, res) => {
  *           properties:
  *             url:
  *               type: string
+ *         order_id:
+ *           type: string
+ *           properties:
+ *             url:
+ *               type: string
  */
 
 /**
@@ -188,7 +193,9 @@ app.post("/charge", function (req, res) {
     gross_amount += item.price * item.quantity;
   });
 
-  let orderIdRand = "order-id-" + Math.round(new Date().getTime() / 1000);
+  // let orderIdRand = "order-id-" + Math.round(new Date().getTime() / 1000);
+  // let orderIdRand = "order-id-" + Math.round(new Date().getTime() / 1000);
+  let orderIdRand = body.order_id;
   let parameter = {
     transaction_details: {
       order_id: orderIdRand,
