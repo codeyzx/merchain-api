@@ -143,9 +143,6 @@ app.get("/", (rqe, res) => {
  *               type: string
  *         order_id:
  *           type: string
- *           properties:
- *             url:
- *               type: string
  */
 
 /**
@@ -198,7 +195,7 @@ app.post("/charge", function (req, res) {
   let orderIdRand = body.order_id;
   let parameter = {
     transaction_details: {
-      order_id: orderIdRand,
+      order_id: "order-id-" + orderIdRand,
       gross_amount: gross_amount,
     },
     customer_details: customers,
