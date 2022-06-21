@@ -188,17 +188,30 @@ app.post("/charge", function (req, res) {
     gross_amount += item.price * item.quantity;
   });
 
+  let orderIdRand = "order-id-" + Math.round(new Date().getTime() / 1000);
   let parameter = {
     transaction_details: {
-      order_id: "order-id-" + Math.round(new Date().getTime() / 1000),
+      order_id: orderIdRand,
       gross_amount: gross_amount,
     },
     customer_details: customers,
     item_details: items,
     callbacks: {
-      finish: url,
+      finish: url + `?order-id=${orderIdRand}`,
     },
   };
+
+  // let parameter = {
+  //   transaction_details: {
+  //     order_id: "order-id-" + Math.round(new Date().getTime() / 1000),
+  //     gross_amount: gross_amount,
+  //   },
+  //   customer_details: customers,
+  //   item_details: items,
+  //   callbacks: {
+  //     finish: url,
+  //   },
+  // };
 
   // create snap transaction token
   snap.createTransactionToken(parameter).then((transactionToken) => {
