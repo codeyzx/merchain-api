@@ -197,7 +197,7 @@ app.post("/charge", function (req, res) {
     customer_details: customers,
     item_details: items,
     callbacks: {
-      finish: url + `${orderIdRand}`,
+      finish: url,
     },
   };
 
