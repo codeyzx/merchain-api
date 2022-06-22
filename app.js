@@ -1,5 +1,15 @@
 import express from "express";
 import dotenv from "dotenv";
+import { initializeApp } from "firebase/app";
+import {
+  getFirestore,
+  collection,
+  doc,
+  query,
+  updateDoc,
+  where,
+  getDocs,
+} from "firebase/firestore";
 import admin from "firebase-admin";
 import { getAuth } from "firebase-admin/auth";
 import midtransClient from "midtrans-client";
@@ -41,6 +51,12 @@ const auth_uri = process.env.auth_uri;
 const token_uri = process.env.token_uri;
 const auth_provider_x509_cert_url = process.env.auth_provider_x509_cert_url;
 const client_x509_cert_url = process.env.client_x509_cert_url;
+const apiKey = process.env.apiKey;
+const authDomain = process.env.authDomain;
+const projectId = process.env.projectId;
+const storageBucket = process.env.storageBucket;
+const messagingSenderId = process.env.messagingSenderId;
+const appId = process.env.appId;
 
 const PORT = process.env.PORT || 3000;
 
@@ -55,6 +71,15 @@ const firebase = {
   token_uri,
   auth_provider_x509_cert_url,
   client_x509_cert_url,
+};
+
+const firebaseConfig = {
+  apiKey,
+  authDomain,
+  projectId,
+  storageBucket,
+  messagingSenderId,
+  appId,
 };
 
 const snap = new midtransClient.Snap({
@@ -254,12 +279,6 @@ app.get("/det/:transaction_id", function (req, res) {
 
       let summary = transactionStatusObject;
 
-      // let summary = `Transaction notification received. Order ID: ${orderId}. Transaction status: ${transactionStatus}. Fraud status: ${fraudStatus}.<br>Raw notification object:<pre>${JSON.stringify(
-      //   transactionStatusObject,
-      //   null,
-      //   2
-      // )}</pre>`;
-
       // [5.B] Handle transaction status on your backend via notification alternatively
       // Sample transactionStatus handling logic
       // if (transactionStatus == "capture") {
@@ -286,6 +305,75 @@ app.get("/det/:transaction_id", function (req, res) {
       // }
 
       res.status(200).send(summary);
+    })
+    .catch(() => {
+      res.status(404).json({
+        status_code: "404",
+        status_message: "Transaction id not found",
+      });
+    });
+});
+
+app.post("/notification_handler", function (req, res) {
+  let receivedJson = req.body;
+  snap.transaction
+    .notification(receivedJson)
+    .then(async (transactionStatusObject) => {
+      const app = initializeApp(firebaseConfig);
+      const firestoreDb = getFirestore(app);
+
+      let orderId = transactionStatusObject.order_id;
+      let transactionStatus = transactionStatusObject.transaction_status;
+
+      const q = query(
+        collection(firestoreDb, "orders"),
+        where("orderId", "==", orderId)
+      );
+      const docSnap = await getDocs(q);
+      const id = docSnap.docs[0].id;
+
+      if (transactionStatus == "capture") {
+        if (fraudStatus == "challenge") {
+          await updateDoc(doc(firestoreDb, "orders", id), {
+            status: "challenge",
+          });
+          // TODO: set transaction status on your databaase to 'challenge'
+        } else if (fraudStatus == "accept") {
+          await updateDoc(doc(firestoreDb, "orders", id), {
+            status: "accept",
+          });
+          // TODO: set transaction status on your databaase to 'success'
+        }
+      } else if (transactionStatus == "settlement") {
+        await updateDoc(doc(firestoreDb, "orders", id), {
+          status: "settlement",
+        });
+        // TODO: set transaction status on your databaase to 'success'
+        // Note: Non-card transaction will become 'settlement' on payment success
+        // Card transaction will also become 'settlement' D+1, which you can ignore
+        // because most of the time 'capture' is enough to be considered as success
+      } else if (
+        transactionStatus == "cancel" ||
+        transactionStatus == "deny" ||
+        transactionStatus == "expire"
+      ) {
+        // TODO: set transaction status on your databaase to 'failure'
+        await updateDoc(doc(firestoreDb, "orders", id), {
+          status: "failure",
+        });
+      } else if (transactionStatus == "pending") {
+        await updateDoc(doc(firestoreDb, "orders", id), {
+          status: "pending",
+        });
+        // TODO: set transaction status on your databaase to 'pending' / waiting payment
+      } else if (transactionStatus == "refund") {
+        await updateDoc(doc(firestoreDb, "orders", id), {
+          status: "refund",
+        });
+        // TODO: set transaction status on your databaase to 'refund'
+      }
+
+      res.status(200).send(transactionStatusObject);
     })
     .catch(() => {
       res.status(404).json({
