@@ -247,7 +247,7 @@ app.post("/charge", function (req, res) {
     console.log(error);
   }
 });
-//swagger
+//swagger lagi
 /**
  * @swagger
  * /det/{transaction_id}:
