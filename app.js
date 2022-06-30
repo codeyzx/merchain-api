@@ -231,17 +231,21 @@ app.post("/charge", function (req, res) {
   };
 
   // create snap transaction token
-  snap
-    .createTransactionToken(parameter)
-    .then((transactionToken) => {
-      res.status(200).json({ token: transactionToken });
-    })
-    .catch((e) => {
-      res.status(404).json({
-        status_code: "404",
-        error_message: e,
+  try {
+    snap
+      .createTransactionToken(parameter)
+      .then((transactionToken) => {
+        res.status(200).json({ token: transactionToken });
+      })
+      .catch((e) => {
+        res.status(404).json({
+          status_code: "404",
+          error_message: e,
+        });
       });
-    });
+  } catch (error) {
+    console.log(error);
+  }
 });
 //swagger
 /**
