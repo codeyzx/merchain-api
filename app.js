@@ -247,7 +247,7 @@ app.post("/charge", function (req, res) {
     res.status(200).json({ token: transactionToken });
   });
 });
-
+//swagger
 /**
  * @swagger
  * /det/{transaction_id}:
