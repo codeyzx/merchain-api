@@ -230,18 +230,6 @@ app.post("/charge", function (req, res) {
     },
   };
 
-  // let parameter = {
-  //   transaction_details: {
-  //     order_id: "order-id-" + Math.round(new Date().getTime() / 1000),
-  //     gross_amount: gross_amount,
-  //   },
-  //   customer_details: customers,
-  //   item_details: items,
-  //   callbacks: {
-  //     finish: url,
-  //   },
-  // };
-
   // create snap transaction token
   snap
     .createTransactionToken(parameter)
