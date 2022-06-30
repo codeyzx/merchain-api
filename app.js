@@ -188,7 +188,7 @@ app.get("/", (rqe, res) => {
  * @swagger
  * /charge:
  *   post:
- *     summary: Create a new transaction_id
+ *     summary: Create a new transaction token
  *     tags: [Transaction]
  *     requestBody:
  *       required: true
@@ -198,7 +198,7 @@ app.get("/", (rqe, res) => {
  *             $ref: '#/components/schemas/Transaction'
  *     responses:
  *       200:
- *         description: The transaction_id was successfully created
+ *         description: The transaction token was successfully created
  *       500:
  *         description: Some server error
  */
