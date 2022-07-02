@@ -93,7 +93,7 @@ app.use(express.json()); // to support parsing JSON POST body
 app.use(cors());
 app.use(morgan("dev"));
 app.use(function (req, res, next) {
-  // Website you wish to allow to connect
+  // Website you wish to allow to connect restart pls
   res.setHeader("Access-Control-Allow-Origin", "*");
 
   // Request methods you wish to allow
