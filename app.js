@@ -174,7 +174,7 @@ app.get("/", (rqe, res) => {
  * @swagger
  * tags:
  *   name: Transaction
- *   description: Managing transaction API
+ *   description: Managing transaction merchain API
  */
 
 /**
